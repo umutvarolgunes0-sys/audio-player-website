@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>101dunyasi Profesyonel Okey & Radyo Platformu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-dark: #090b10;
+            --panel-bg: #111420;
+            --card-bg: #1a1e2e;
+            --accent-blue: #00d2ff;
+            --accent-purple: #7928ca;
+            --live-red: #ff0055;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+            --border-color: #23293e;
+            --gold-vip: #ffd700;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Poppins', sans-serif; }
+        body { background-color: var(--bg-dark); color: var(--text-main); height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+
+        /* SPLASH EKRANI */
+        #splash-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: radial-gradient(circle at center, #1a1e30 0%, #050608 100%);
+            z-index: 9999; display: flex; justify-content: center; align-items: center;
+            transition: all 0.5s ease;
+        }
+
+        .splash-card {
+            background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 20px; padding: 40px; text-align: center;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.9); backdrop-filter: blur(15px); width: 420px;
+        }
+
+        .pulse-dot { width: 12px; height: 12px; background-color: var(--live-red); border-radius: 50%; box-shadow: 0 0 12px var(--live-red); animation: pulse 1.2s infinite; }
+        @keyframes pulse { 0%, 100% { transform: scale(0.9); opacity: 0.8; } 50% { transform: scale(1.2); opacity: 1; } }
+
+        .btn-live-start {
+            background: linear-gradient(135deg, #0072ff 0%, #00d2ff 100%); color: #fff;
+            border: none; padding: 14px 38px; font-size: 1.1rem; font-weight: 600;
+            border-radius: 30px; cursor: pointer; box-shadow: 0 0 25px rgba(0, 210, 255, 0.5);
+            transition: all 0.3s; display: inline-flex; align-items: center; gap: 10px; margin-top: 20px;
+        }
+
+        #app-container { display: flex; flex-direction: column; height: 100vh; opacity: 0; transition: opacity 0.5s ease; }
+
+        .top-navbar {
+            background: #11131f; border-bottom: 1px solid var(--border-color);
+            padding: 10px 20px; display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .marquee-box { flex: 1; margin: 0 20px; overflow: hidden; background: rgba(0,0,0,0.4); padding: 6px 15px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.05); }
+        .marquee-text { display: inline-block; animation: marquee 20s linear infinite; color: #cbd5e1; font-size: 0.85rem; }
+        @keyframes marquee { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
+
+        .mini-player-bar {
+            background: var(--panel-bg); border-bottom: 1px solid var(--border-color);
+            padding: 12px 25px; display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .player-left { display: flex; align-items: center; gap: 15px; }
+        .dj-avatar { width: 48px; height: 48px; border-radius: 50%; border: 2px solid var(--accent-purple); box-shadow: 0 0 12px var(--accent-purple); }
+
+        .player-controls { display: flex; align-items: center; gap: 12px; }
+        .btn-play-toggle { width: 42px; height: 42px; border-radius: 50%; background: var(--accent-blue); border: none; color: #000; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .volume-box { display: flex; align-items: center; gap: 8px; }
+        .volume-box input[type="range"] { accent-color: var(--accent-blue); width: 80px; cursor: pointer; }
+
+        .main-content { display: flex; flex: 1; overflow: hidden; }
+        .chat-section { flex: 1; display: flex; flex-direction: column; background: #0c0e17; border-right: 1px solid var(--border-color); position: relative; }
+        
+        #dj-fx-bar {
+            background: #181c2c; border-bottom: 1px solid var(--border-color); padding: 8px 15px;
+            display: none; align-items: center; gap: 10px; overflow-x: auto;
+        }
+        .fx-btn { background: rgba(255,255,255,0.08); border: 1px solid var(--border-color); color: #fff; padding: 6px 14px; border-radius: 15px; font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap; user-select: none; transition: 0.2s; }
+        .fx-btn:hover { background: var(--accent-purple); border-color: var(--accent-purple); }
+        .fx-btn.push-talk-active { background: var(--live-red) !important; animation: pulse 0.8s infinite; }
+
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
+        .chat-bubble { background: var(--card-bg); border: 1px solid var(--border-color); padding: 10px 15px; border-radius: 10px; max-width: 75%; width: fit-content; }
+        .chat-bubble.dj-bubble { background: linear-gradient(135deg, rgba(121, 40, 202, 0.25) 0%, rgba(0, 210, 255, 0.15) 100%); border: 1px solid var(--accent-purple); }
+        .chat-bubble.bot-bubble { background: rgba(0, 210, 255, 0.1); border: 1px solid var(--accent-blue); color: var(--accent-blue); }
+        .chat-bubble.system-announcement { background: rgba(255, 215, 0, 0.15); border: 1px solid var(--gold-vip); color: var(--gold-vip); width: 100%; max-width: 100%; text-align: center; font-weight: 500; }
+        .chat-bubble img.chat-gif { max-width: 200px; border-radius: 8px; margin-top: 5px; display: block; }
+
+        .role-badge { font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; margin-right: 6px; display: inline-block; }
+        .role-wm { background: #ffd700; color: #000; }
+        .role-sy { background: #e67e22; color: #fff; }
+        .role-dj { background: #7928ca; color: #fff; box-shadow: 0 0 6px #7928ca; }
+        .role-vip { background: linear-gradient(45deg, #ffd700, #ffa500); color: #000; font-weight: bold; }
+        .role-user { background: #3b82f6; color: #fff; }
+
+        .chat-tools-bar { display: flex; align-items: center; gap: 8px; padding: 6px 15px; background: #131722; border-top: 1px solid var(--border-color); }
+        .tool-picker-btn { background: transparent; border: none; color: var(--text-muted); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: 0.2s; }
+        .tool-picker-btn:hover { color: var(--accent-blue); background: rgba(255,255,255,0.05); }
+
+        .picker-popup {
+            position: absolute; bottom: 70px; left: 15px; background: var(--panel-bg);
+            border: 1px solid var(--border-color); border-radius: 12px; padding: 12px;
+            width: 300px; box-shadow: 0 10px 30px rgba(0,0,0,0.8); display: none; z-index: 100;
+        }
+        .emoji-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; font-size: 1.2rem; text-align: center; cursor: pointer; }
+        .emoji-grid span:hover { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        
+        .gif-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; max-height: 180px; overflow-y: auto; }
+        .gif-item { border-radius: 6px; cursor: pointer; width: 100%; height: 75px; object-fit: cover; border: 1px solid var(--border-color); transition: 0.2s; }
+        .gif-item:hover { border-color: var(--accent-blue); transform: scale(1.02); }
+
+        .chat-input-area { padding: 12px 15px; background: var(--panel-bg); border-top: 1px solid var(--border-color); display: flex; gap: 10px; align-items: center; }
+        .chat-input-area input { flex: 1; background: #07080e; border: 1px solid var(--border-color); padding: 11px 16px; border-radius: 25px; color: #fff; outline: none; }
+
+        .users-sidebar { width: 300px; background: var(--panel-bg); padding: 20px; overflow-y: auto; }
+        .user-item { padding: 10px 12px; border-radius: 8px; background: rgba(255,255,255,0.02); display: flex; align-items: center; justify-content: space-between; font-size: 0.85rem; cursor: pointer; margin-bottom: 8px; border: 1px solid transparent; text-decoration: none; color: inherit; transition: 0.2s; }
+        .user-item:hover { background: rgba(255,255,255,0.05); border-color: var(--border-color); color: var(--accent-blue); }
+
+        .rooms-header { font-size: 0.8rem; color: var(--text-muted); margin: 15px 0 8px 0; display: flex; justify-content: space-between; align-items: center; }
+
+        #fireworks-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 50; }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 9000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(8px); }
+        .modal-box { background: var(--panel-bg); border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; width: 950px; max-width: 95vw; height: 88vh; max-height: 900px; display: flex; flex-direction: column; box-shadow: 0 25px 70px rgba(0,0,0,0.9); }
+        .modal-content-scroll { flex: 1; overflow-y: auto; padding-right: 5px; margin-top: 15px; }
+
+        .btn-action { background: var(--accent-blue); color: #000; border: none; padding: 9px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+        .btn-action:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 6px; }
+        .form-group input, .form-group select, .form-group textarea { width: 100%; padding: 11px 14px; background: #07080e; border: 1px solid var(--border-color); border-radius: 8px; color: #fff; outline: none; }
+
+        .admin-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+        .admin-table th, .admin-table td { padding: 12px; text-align: left; border-bottom: 1px solid var(--border-color); }
+        .admin-table th { background: rgba(255,255,255,0.04); color: var(--text-muted); }
+
+        .upload-area { border: 2px dashed var(--accent-blue); padding: 20px; text-align: center; border-radius: 12px; background: rgba(0, 210, 255, 0.03); margin-bottom: 15px; cursor: pointer; }
+        .upload-area:hover { background: rgba(0, 210, 255, 0.08); }
+
+        .admin-tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px; margin-bottom: 15px; overflow-x: auto; }
+        .admin-tab-btn { background: rgba(255,255,255,0.05); border: none; color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; white-space: nowrap; transition: 0.2s; }
+        .admin-tab-btn.active { background: var(--accent-blue); color: #000; font-weight: 600; }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+
+        .notification-badge { background: var(--live-red); color: #fff; font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; font-weight: bold; margin-left: 6px; display: inline-block; animation: pulse 1s infinite; }
+    </style>
+</head>
+<body>
+
+    <audio id="radio-audio" preload="auto" crossorigin="anonymous"></audio>
+
+    <!-- SPLASH EKRANI -->
+    <div id="splash-overlay">
+        <div class="splash-card">
+            <h2 style="margin-bottom:12px; font-size:1.6rem;"><i class="fa-solid fa-gamepad" style="color: var(--accent-blue);"></i> <span class="site-title-text">101 Dünyası Okey & Radyo</span></h2>
+            <div style="display:flex; align-items:center; justify-content:center; gap:8px; font-size:0.95rem; color:#cbd5e1;">
+                <span class="pulse-dot"></span> RADYO & OKEY CANLI
+            </div>
+            <button class="btn-live-start" onclick="startPlatformAndAudio()">
+                <i class="fa-solid fa-play"></i> Giriş Yap & Radyoyu Başlat
+            </button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="app-container">
+        <!-- TOP NAVBAR -->
+        <div class="top-navbar">
+            <div style="font-weight:700; font-size:1.4rem; color:var(--accent-blue);"><i class="fa-solid fa-dice"></i> <span class="site-title-text">101dunyasi</span></div>
+            <div class="marquee-box">
+                <div class="marquee-text" id="site-announcement">📢 101dunyasi Profesyonel Okey Salonu ve Canlı Radyo Platformuna Hoş Geldiniz! İyi Eğlenceler.</div>
+            </div>
+            <div id="user-controls" style="display:flex; align-items:center; gap:10px;">
+                <button class="btn-action" style="background:#23293e; color:#fff;" onclick="openModal('register-modal')"><i class="fa-solid fa-user-plus"></i> Kayıt Ol</button>
+                <button class="btn-action" onclick="openModal('auth-modal')"><i class="fa-solid fa-right-to-bracket"></i> Giriş Yap</button>
+            </div>
+        </div>
+
+        <!-- MINI PLAYER BAR -->
+        <div class="mini-player-bar">
+            <div class="player-left">
+                <img src="https://via.placeholder.com/48/7928ca/ffffff?text=DJ" id="dj-avatar-img" class="dj-avatar">
+                <div>
+                    <h4 id="current-dj">Yayındaki DJ: 🎧 Otomatik Oto-DJ (Yedek Akış)</h4>
+                    <p style="font-size:0.8rem; color:var(--accent-blue);" id="current-song"><i class="fa-solid fa-music"></i> Çalan Parça Yükleniyor...</p>
+                </div>
+            </div>
+
+            <div class="player-controls">
+                <button class="btn-play-toggle" id="play-btn" onclick="toggleAudio()"><i class="fa-solid fa-pause"></i></button>
+                <div class="volume-box">
+                    <i class="fa-solid fa-volume-high" id="volume-icon" onclick="toggleMute()" style="cursor:pointer;"></i>
+                    <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.8" oninput="setVolume(this.value)">
+                </div>
+                <button class="btn-action" style="background:#23293e; color:#fff;" onclick="openModal('request-modal')"><i class="fa-solid fa-heart"></i> İstek Yap</button>
+                
+                <button class="btn-action" id="master-panel-btn" style="background:var(--gold-vip); color:#000; display:none;" onclick="openModal('master-admin-modal')">
+                    <i class="fa-solid fa-shield-halved"></i> Webmaster Yönetim Paneli
+                </button>
+                
+                <button class="btn-action" id="dj-panel-btn" style="background:var(--accent-purple); color:#fff; display:none;" onclick="openDjPanelModal()">
+                    <i class="fa-solid fa-sliders"></i> DJ Müzik Paneli <span id="dj-request-badge" class="notification-badge" style="display:none;">0</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN LAYOUT -->
+        <div class="main-content">
+            <div class="chat-section">
+                <canvas id="fireworks-canvas"></canvas>
+
+                <div id="dj-fx-bar">
+                    <span style="font-size:0.75rem; color:var(--accent-blue); font-weight:bold;">🎧 DJ & Anons:</span>
+                    <button class="fx-btn" id="push-talk-btn" style="background:#e74c3c;" onmousedown="startPushToTalk()" onmouseup="stopPushToTalk()" ontouchstart="startPushToTalk()" ontouchend="stopPushToTalk()">
+                        <i class="fa-solid fa-microphone"></i> 🎙️ BAS KONUŞ
+                    </button>
+                    <button class="fx-btn" onclick="playAudioEffect('clap')">👏 Alkış</button>
+                    <button class="fx-btn" onclick="playAudioEffect('cheer')">🎉 Tezahürat</button>
+                    <button class="fx-btn" onclick="playAudioEffect('laugh')">😂 Gülme</button>
+                    <button class="fx-btn" style="background:var(--live-red);" onclick="clearChat()">🧹 Sohbeti Temizle</button>
+                </div>
+
+                <div class="chat-messages" id="chat-box">
+                    <div class="chat-bubble bot-bubble">
+                        🤖 <b>Okey & Radyo Bot:</b> Okey salonumuza hoş geldiniz! Sohbet alanından emoji gönderebilir, GIF paylaşabilir veya DJ'e istek şarkı yollayabilirsiniz! 🎉
+                    </div>
+                    <div class="chat-bubble dj-bubble">
+                        <span class="role-badge role-dj">DJ</span> <b>Ototo-DJ:</b> Canlı DJ bağlanana kadar 20 parçalık otomatik müzik listemiz kesintisiz yayındadır! 🎧
+                    </div>
+                </div>
+
+                <div class="chat-tools-bar">
+                    <button class="tool-picker-btn" onclick="togglePicker('emoji-picker')" title="Emoji Seç"><i class="fa-solid fa-face-smile"></i></button>
+                    <button class="tool-picker-btn" onclick="togglePicker('gif-picker')" title="GIF Gönder"><i class="fa-solid fa-file-image"></i> GIF</button>
+                    <button class="tool-picker-btn" onclick="triggerFireworksEffect()" title="Havai Fişek Patlat!"><i class="fa-solid fa-wand-magic-sparkles" style="color:var(--gold-vip);"></i> Havai Fişek</button>
+
+                    <div class="picker-popup" id="emoji-picker">
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:6px; font-weight:bold;">Hızlı Emojiler</div>
+                        <div class="emoji-grid">
+                            <span onclick="insertEmoji('😊')">😊</span>
+                            <span onclick="insertEmoji('😂')">😂</span>
+                            <span onclick="insertEmoji('❤️')">❤️</span>
+                            <span onclick="insertEmoji('🔥')">🔥</span>
+                            <span onclick="insertEmoji('👍')">👍</span>
+                            <span onclick="insertEmoji('🎉')">🎉</span>
+                            <span onclick="insertEmoji('👑')">👑</span>
+                            <span onclick="insertEmoji('🎵')">🎵</span>
+                            <span onclick="insertEmoji('🚀')">🚀</span>
+                            <span onclick="insertEmoji('😎')">😎</span>
+                            <span onclick="insertEmoji('🍻')">🍻</span>
+                            <span onclick="insertEmoji('🌟')">🌟</span>
+                        </div>
+                    </div>
+
+                    <div class="picker-popup" id="gif-picker" style="width:260px;">
+                        <div style="font-size:0.75rem; color:var(--text-muted); margin-bottom:6px; font-weight:bold;">Eğlenceli GIF'ler</div>
+                        <div class="gif-grid">
+                            <img src="https://media.giphy.com/media/26u4lOMIPyJS0nDHy/giphy.gif" class="gif-item" onclick="sendGifMessage('https://media.giphy.com/media/26u4lOMIPyJS0nDHy/giphy.gif')">
+                            <img src="https://media.giphy.com/media/l0HlTy9x8FZo0XO1i/giphy.gif" class="gif-item" onclick="sendGifMessage('https://media.giphy.com/media/l0HlTy9x8FZo0XO1i/giphy.gif')">
+                            <img src="https://media.giphy.com/media/3oz8xAFtqoOUUrsh7W/giphy.gif" class="gif-item" onclick="sendGifMessage('https://media.giphy.com/media/3oz8xAFtqoOUUrsh7W/giphy.gif')">
+                            <img src="https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif" class="gif-item" onclick="sendGifMessage('https://media.giphy.com/media/3o7TKSjRrfIPjeiVyM/giphy.gif')">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Sohbete katılın veya okey masasına yazın..." onkeydown="if(event.key==='Enter') sendChatMessage()">
+                    <button class="btn-action" onclick="sendChatMessage()"><i class="fa-solid fa-paper-plane"></i> Gönder</button>
+                </div>
+            </div>
+
+            <div class="users-sidebar">
+                <div class="rooms-header">
+                    <span>🏠 OKEY SALONLARI & ODALAR</span>
+                </div>
+                <div id="rooms-list" style="margin-bottom:15px;">
+                    <a href="https://101dunyasi.com" target="_blank" class="user-item" style="background:rgba(0,210,255,0.1); border-color:var(--accent-blue);">
+                        <span><i class="fa-solid fa-dice-three"></i> 101 Genel Salon (104 Oyuncu)</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.7rem; color:var(--accent-blue);"></i>
+                    </a>
+                    <a href="https://101dunyasi.com" target="_blank" class="user-item">
+                        <span><i class="fa-solid fa-dice-two"></i> Düz Okey VIP Salon (42 Oyuncu)</span>
+                        <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:0.7rem;"></i>
+                    </a>
+                </div>
+
+                <h3 style="font-size:0.85rem; color:var(--text-muted); margin-bottom:12px;">ÇEVRİM İÇİ KADRO & ÜYELER</h3>
+                <div id="user-list">
+                    <div class="user-item" style="cursor:default;">
+                        <span><span class="role-badge role-wm">WM</span> Webmaster</span>
+                        <i class="fa-solid fa-crown" style="color:#ffd700;"></i>
+                    </div>
+                    <div class="user-item" style="cursor:default;">
+                        <span><span class="role-badge role-sy">SY</span> SiteYetkilisi</span>
+                        <i class="fa-solid fa-shield" style="color:#e67e22;"></i>
+                    </div>
+                    <div class="user-item" style="cursor:default;">
+                        <span><span class="role-badge role-dj">DJ</span> DJ_Can</span>
+                        <i class="fa-solid fa-microphone" style="color:#7928ca;"></i>
+                    </div>
+                    <div class="user-item" style="cursor:default;">
+                        <span><span class="role-badge role-vip">VIP</span> VIP_Ahmet</span>
+                        <i class="fa-solid fa-star" style="color:#ffd700;"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: GİRİŞ SEÇENEKLERİ -->
+    <div class="modal-overlay" id="auth-modal">
+        <div class="modal-box" style="width:420px; height:auto;">
+            <h3 style="margin-bottom:15px;">Sisteme Giriş Yap</h3>
+            <div class="form-group">
+                <label>Kullanıcı Adı / Nick</label>
+                <input type="text" id="login-user" placeholder="Kullanıcı adınızı giriniz...">
+            </div>
+            <div class="form-group">
+                <label>Şifre</label>
+                <input type="password" id="login-pass" placeholder="Şifrenizi giriniz...">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                <button class="btn-action" style="background:#23293e; color:#fff;" onclick="closeModal('auth-modal')">İptal</button>
+                <button class="btn-action" onclick="login()">Giriş Yap</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: KAYIT OL -->
+    <div class="modal-overlay" id="register-modal">
+        <div class="modal-box" style="width:420px; height:auto; border: 1px solid var(--accent-blue);">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:10px; margin-bottom:15px;">
+                <h3 style="font-size:1.1rem; color:var(--accent-blue);"><i class="fa-solid fa-user-plus"></i> Yeni Hesap Oluştur</h3>
+                <button class="fx-btn" style="background:transparent; border:none;" onclick="closeModal('register-modal')"><i class="fa-solid fa-xmark" style="font-size:1.2rem; color:#fff;"></i></button>
+            </div>
+            <div class="form-group">
+                <label>Kullanıcı Adı (Nick)</label>
+                <input type="text" id="reg-nick" placeholder="Benzersiz bir rumuz seçin...">
+            </div>
+            <div class="form-group">
+                <label>E-posta Adresi</label>
+                <input type="email" id="reg-email" placeholder="ornek@mail.com">
+            </div>
+            <div class="form-group">
+                <label>Şifre</label>
+                <input type="password" id="reg-pass" placeholder="Güçlü bir şifre girin...">
+            </div>
+            <div class="form-group">
+                <label>Şifre Tekrar</label>
+                <input type="password" id="reg-pass-repeat" placeholder="Şifrenizi tekrar girin...">
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:10px;">
+                <button class="btn-action" style="background:#23293e; color:#fff;" onclick="closeModal('register-modal')">İptal</button>
+                <button class="btn-action" onclick="registerUser()"><i class="fa-solid fa-check"></i> Kayıt Ol</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: İSTEK PARÇA ÖZEL MESAJ SEKMESİ -->
+    <div class="modal-overlay" id="request-modal">
+        <div class="modal-box" style="width:420px; height:auto; border: 1px solid var(--accent-blue);">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:10px; margin-bottom:15px;">
+                <h3 style="font-size:1.1rem; color:var(--accent-blue);"><i class="fa-solid fa-heart" style="color:var(--live-red);"></i> DJ'e Özel İstek Şarkı Sekmesi</h3>
+                <button class="fx-btn" style="background:transparent; border:none;" onclick="closeModal('request-modal')"><i class="fa-solid fa-xmark" style="font-size:1.2rem; color:#fff;"></i></button>
+            </div>
+            <div class="form-group">
+                <label>Adınız / Rumuzunuz</label>
+                <input type="text" id="req-sender-name" placeholder="Rumuzunuzu yazın...">
+            </div>
+            <div class="form-group">
+                <label>İstediğiniz Parça (Sanatçı & Şarkı Adı)</label>
+                <input type="text" id="req-song-name" placeholder="Örn: Müslüm Gürses - Nilüfer">
+            </div>
+            <div class="form-group">
+                <label>DJ'e Özel Mesajınız / İletiniz (İsteğe Bağlı)</label>
+                <textarea id="req-message-text" rows="3" placeholder="DJ için bir not veya selam bırakın..."></textarea>
+            </div>
+            <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:5px;">
+                <button class="btn-action" style="background:#23293e; color:#fff;" onclick="closeModal('request-modal')">İptal</button>
+                <button class="btn-action" onclick="sendSongRequest()"><i class="fa-solid fa-paper-plane"></i> Gönder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: WEBMASTER YÖNETİM PANELİ -->
+    <div class="modal-overlay" id="master-admin-modal">
+        <div class="modal-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
+                <h3 style="display:flex; align-items:center; gap:10px; color: var(--gold-vip);">
+                    <i class="fa-solid fa-shield-halved"></i> Webmaster Yönetim Paneli & Kontrol Merkezi
+                </h3>
+                <button class="fx-btn" style="background:var(--live-red);" onclick="closeModal('master-admin-modal')"><i class="fa-solid fa-xmark"></i> Kapat</button>
+            </div>
+
+            <div class="modal-content-scroll">
+                <div class="admin-tabs">
+                    <button class="admin-tab-btn active" onclick="switchAdminTab(event, 'sec-users')">1. Kullanıcı & Üye Ara</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab(event, 'sec-autodj')">2. Oto-DJ (20 Müzik Yükle)</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab(event, 'sec-broadcast')">3. Duyuru & Toplu Mesaj</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab(event, 'sec-bans')">4. Ban Listesi</button>
+                    <button class="admin-tab-btn" onclick="switchAdminTab(event, 'sec-settings')">5. Genel Ayarlar & Altyapı</button>
+                </div>
+
+                <div class="admin-section active" id="sec-users">
+                    <h4 style="color:var(--accent-blue); margin-bottom:8px;">Üye Arama & Detaylı Kayıt Bilgisi</h4>
+                    <div style="display:flex; gap:10px; margin-bottom:12px;">
+                        <input type="text" id="member-search-input" placeholder="Üye rumuzu (nick) ile ara..." style="flex:1; background:#07080e; border:1px solid var(--border-color); padding:10px; border-radius:8px; color:#fff;">
+                        <button class="btn-action" onclick="searchMember()">Üye Ara</button>
+                    </div>
+                    <div id="member-search-result" style="background:rgba(255,255,255,0.02); border:1px solid var(--border-color); border-radius:8px; padding:15px; margin-bottom:15px; font-size:0.85rem;">
+                        Arama bekleniyor... Bir üye aratarak kayıt bilgilerini ve işlemlerini görüntüleyin.
+                    </div>
+                    <table class="admin-table">
+                        <thead><tr><th>Üye Adı</th><th>Rolü</th><th>Kayıt Tarihi</th><th>İşlemler</th></tr></thead>
+                        <tbody id="admin-members-list">
+                            <tr><td>Webmaster</td><td><span class="role-badge role-wm">WM</span></td><td>01.01.2025</td><td><button class="fx-btn" onclick="alert('Webmaster hesabı tam yetkilidir.')">İncele</button></td></tr>
+                            <tr><td>DJ_Can</td><td><span class="role-badge role-dj">DJ</span></td><td>10.02.2025</td><td><button class="fx-btn" onclick="alert('DJ detayları açıldı.')">İncele</button></td></tr>
+                            <tr><td>VIP_Ahmet</td><td><span class="role-badge role-vip">VIP</span></td><td>15.06.2025</td><td><button class="fx-btn" style="background:var(--live-red);" onclick="alert('Üye uyarıldı/işlem yapıldı')">İşlem Yap</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="admin-section" id="sec-autodj">
+                    <h4 style="color:var(--accent-blue); margin-bottom:8px;">Oto-DJ Çevrimdışı Yedek Müzik Listesi (Maksimum 20 Parça)</h4>
+                    <div class="upload-area" onclick="document.getElementById('mp3-file-input').click()">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size:2rem; color:var(--accent-blue); margin-bottom:6px;"></i>
+                        <h4>Bilgisayarınızdan MP3 Dosyası Seçin</h4>
+                        <input type="file" id="mp3-file-input" accept="audio/mp3, audio/mpeg" multiple style="display:none;" onchange="handleMp3Upload(event)">
+                    </div>
+                    <h4 style="font-size:0.85rem; color:var(--accent-blue);">Yüklü Parçalar (<span id="mp3-count">3</span> / 20)</h4>
+                    <table class="admin-table">
+                        <thead><tr><th>Sıra</th><th>Parça Adı</th><th>Kaynak</th><th>İşlem</th></tr></thead>
+                        <tbody id="autodj-playlist-body"></tbody>
+                    </table>
+                </div>
+
+                <div class="admin-section" id="sec-broadcast">
+                    <h4 style="color:var(--accent-blue); margin-bottom:8px;">Yönetim Duyurusu & Toplu Mesaj</h4>
+                    <div class="form-group">
+                        <label>Toplu Mesaj veya Duyuru Metni</label>
+                        <textarea id="broadcast-text-input" rows="4" placeholder="Tüm odalara iletilecek duyuru metnini buraya yazın..."></textarea>
+                    </div>
+                    <button class="btn-action" onclick="sendBroadcastMessage()"><i class="fa-solid fa-bullhorn"></i> Tüm Kullanıcılara Duyuru Gönder</button>
+                </div>
+
+                <div class="admin-section" id="sec-bans">
+                    <h4 style="color:var(--accent-blue); margin-bottom:8px;">Ban Yiyen Kullanıcılar Listesi</h4>
+                    <table class="admin-table">
+                        <thead><tr><th>Kullanıcı / IP</th><th>Ban Sebebi</th><th>Banlayan Yetkili</th><th>İşlem</th></tr></thead>
+                        <tbody>
+                            <tr><td>SpamBot_99</td><td>Küfür ve Spam</td><td>Webmaster</td><td><button class="fx-btn" style="background:#2ecc71;" onclick="alert('Ban kaldırıldı!')">Banı Kaldır</button></td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="admin-section" id="sec-settings">
+                    <h4 style="color:var(--accent-blue); margin-bottom:8px;">Sistem Genel Ayarları</h4>
+                    <div class="form-group"><label>Site Başlığı</label><input type="text" id="set-site-title" value="101 Dünyası Okey & Radyo"></div>
+                    <div class="form-group"><label>Kayan Duyuru</label><input type="text" id="set-marquee-text" value="📢 101dunyasi Profesyonel Okey Salonu ve Canlı Radyo Platformuna Hoş Geldiniz!"></div>
+                    <button class="btn-action" onclick="saveGeneralSettings()">Ayarları Kaydet</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: DJ İSTEK VE MÜZİK PANELİ -->
+    <div class="modal-overlay" id="dj-panel-modal">
+        <div class="modal-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding-bottom:12px;">
+                <h3 style="display:flex; align-items:center; gap:10px;">
+                    <i class="fa-solid fa-compact-disc" style="color:var(--accent-purple);"></i> DJ Canlı İstek Paneli & Müzik Yönetim Listesi
+                </h3>
+                <button class="fx-btn" style="background:var(--live-red);" onclick="closeModal('dj-panel-modal')"><i class="fa-solid fa-xmark"></i> Kapat</button>
+            </div>
+
+            <div class="modal-content-scroll">
+                <!-- Canlı İstekler -->
+                <h4 style="font-size:0.9rem; color:var(--gold-vip); margin-bottom:10px;"><i class="fa-solid fa-bell"></i> Kullanıcılardan Gelen Canlı İstekler (<span id="dj-request-count">0</span>)</h4>
+                <div style="max-height: 160px; overflow-y: auto; margin-bottom:20px; background:rgba(0,0,0,0.3); border:1px solid var(--border-color); border-radius:8px; padding:10px;" id="dj-incoming-requests-box">
+                    <p style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:10px;">Henüz gelen istek şarkı bulunmuyor.</p>
+                </div>
+
+                <!-- MP3 Yükleme Alanı -->
+                <h4 style="font-size:0.9rem; color:var(--accent-blue); margin-bottom:8px;"><i class="fa-solid fa-cloud-arrow-up"></i> Çalma Listesine Müzik Ekle</h4>
+                <div class="upload-area" onclick="document.getElementById('mp3-file-input-dj').click()">
+                    <i class="fa-solid fa-music" style="font-size:1.8rem; color:var(--accent-blue); margin-bottom:4px;"></i>
+                    <h4 style="font-size:0.9rem;">Bilgisayarınızdan MP3 Dosyası Seçin</h4>
+                    <input type="file" id="mp3-file-input-dj" accept="audio/mp3, audio/mpeg" multiple style="display:none;" onchange="handleMp3Upload(event)">
+                </div>
+
+                <!-- Çalma Listesi Tablosu -->
+                <h4 style="font-size:0.9rem; margin-bottom:8px; color:var(--accent-blue);">Aktif Oto-DJ Çalma Listesi (<span id="mp3-count-dj">3</span> / 20 Parça)</h4>
+                <table class="admin-table">
+                    <thead><tr><th>Sıra</th><th>Parça Adı</th><th>Kaynak</th><th>İşlem</th></tr></thead>
+                    <tbody id="autodj-playlist-body-dj"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const audioElement = document.getElementById('radio-audio');
+        let isPlaying = false;
+        let audioCtx = null;
+
+        let autoDjPlaylist = [
+            { id: 1, title: "1. Oto-DJ Parça (Yedek Akış 1)", src: "https://stream.zeno.fm/f3wvbbqmdg8uv", isCustom: false },
+            { id: 2, title: "2. Oto-DJ Parça (Yedek Akış 2)", src: "https://icecast.moe.re/stream", isCustom: false },
+            { id: 3, title: "3. Oto-DJ Parça (Yedek Akış 3)", src: "https://bootstrap.radio/stream", isCustom: false }
+        ];
+
+        let currentAutoDjTrackIndex = 0;
+        let incomingSongRequests = [];
+
+        let systemUsers = {
+            'Webmaster': { pass: 'wm123', email: 'webmaster@101dunyasi.com', role: 'Webmaster', isWebmaster: true, isDj: true, regDate: '01.01.2025' },
+            'DJ_Can':    { pass: 'dj123', email: 'djcan@101dunyasi.com', role: 'DJ', isWebmaster: false, isDj: true, regDate: '10.02.2025' },
+            'VIP_Ahmet': { pass: 'vip123', email: 'ahmet@101dunyasi.com', role: 'VIP', isWebmaster: false, isDj: false, regDate: '15.06.2025' }
+        };
+
+        let currentUser = null;
+
+        window.onload = function() {
+            initAutoDjTable();
+            setupAudioEvents();
+            initFireworksCanvas();
+        };
+
+        function registerUser() {
+            const nick = document.getElementById('reg-nick').value.trim();
+            const email = document.getElementById('reg-email').value.trim();
+            const pass = document.getElementById('reg-pass').value.trim();
+            const passRepeat = document.getElementById('reg-pass-repeat').value.trim();
+
+            if (!nick || !email || !pass) {
+                alert('Lütfen tüm alanları doldurunuz.');
+                return;
+            }
+
+            if (pass !== passRepeat) {
+                alert('Şifreler birbiriyle eşleşmiyor!');
+                return;
+            }
+
+            if (systemUsers[nick]) {
+                alert('Bu kullanıcı adı (nick) zaten kullanımda. Lütfen başka bir tane seçin.');
+                return;
+            }
+
+            const today = new Date().toLocaleDateString('tr-TR');
+            systemUsers[nick] = {
+                pass: pass,
+                email: email,
+                role: 'Üye',
+                isWebmaster: false,
+                isDj: false,
+                regDate: today
+            };
+
+            closeModal('register-modal');
+            document.getElementById('reg-nick').value = '';
+            document.getElementById('reg-email').value = '';
+            document.getElementById('reg-pass').value = '';
+            document.getElementById('reg-pass-repeat').value = '';
+
+            alert('Kayıt işlemi başarılı! Şimdi giriş yapabilirsiniz.');
+            openModal('auth-modal');
+            document.getElementById('login-user').value = nick;
+        }
+
+        function sendSongRequest() {
+            const sender = document.getElementById('req-sender-name').value.trim() || (currentUser ? currentUser.username : 'Misafir Dinleyici');
+            const song = document.getElementById('req-song-name').value.trim();
+            const message = document.getElementById('req-message-text').value.trim();
+
+            if (!song) {
+                alert('Lütfen istemek istediğiniz şarkı adını giriniz.');
+                return;
+            }
+
+            const requestObj = {
+                id: Date.now(),
+                sender: sender,
+                song: song,
+                message: message || 'Özel mesaj yok',
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+
+            incomingSongRequests.unshift(requestObj);
+            updateDjRequestUI();
+
+            const box = document.getElementById('chat-box');
+            box.innerHTML += `<div class="chat-bubble dj-bubble">🎵 <b>İSTEK PARÇA:</b> <b>${sender}</b> adlı kullanıcıdan DJ'e: <em>"${song}"</em> (${message})</div>`;
+            box.scrollTop = box.scrollHeight;
+
+            closeModal('request-modal');
+            document.getElementById('req-song-name').value = '';
+            document.getElementById('req-message-text').value = '';
+
+            alert('İstek şarkınız başarıyla DJ paneline ve sesli/görsel bildirim olarak iletildi!');
+        }
+
+        function updateDjRequestUI() {
+            const count = incomingSongRequests.length;
+            const badge = document.getElementById('dj-request-badge');
+            const countSpan = document.getElementById('dj-request-count');
+            const container = document.getElementById('dj-incoming-requests-box');
+
+            if (count > 0) {
+                badge.style.display = 'inline-block';
+                badge.innerText = count;
+                if(countSpan) countSpan.innerText = count;
+
+                let html = '';
+                incomingSongRequests.forEach((req, idx) => {
+                    html += `
+                        <div style="background:rgba(121,40,202,0.15); border:1px solid var(--accent-purple); padding:10px; border-radius:8px; margin-bottom:8px; font-size:0.85rem;">
+                            <div style="display:flex; justify-content:space-between; font-weight:bold; color:var(--accent-blue); margin-bottom:4px;">
+                                <span><i class="fa-solid fa-user"></i> ${req.sender} (${req.time})</span>
+                                <button class="fx-btn" style="background:var(--live-red); padding:2px 8px; font-size:0.7rem;" onclick="removeDjRequest(${idx})">Sil / Okundu</button>
+                            </div>
+                            <div><b>Şarkı:</b> ${req.song}</div>
+                            <div style="color:var(--text-muted); font-size:0.75rem; margin-top:2px;"><b>Not:</b> ${req.message}</div>
+                        </div>
+                    `;
+                });
+                container.innerHTML = html;
+                playNotificationSound();
+            } else {
+                badge.style.display = 'none';
+                if(countSpan) countSpan.innerText = '0';
+                container.innerHTML = '<p style="font-size:0.8rem; color:var(--text-muted); text-align:center; padding:10px;">Henüz gelen istek şarkı bulunmuyor.</p>';
+            }
+        }
+
+        function removeDjRequest(index) {
+            incomingSongRequests.splice(index, 1);
+            updateDjRequestUI();
+        }
+
+        function openDjPanelModal() {
+            openModal('dj-panel-modal');
+        }
+
+        function playNotificationSound() {
+            try {
+                if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(587.33, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.4);
+            } catch(e) { console.log(e); }
+        }
+
+        function togglePicker(pickerId) {
+            const picker = document.getElementById(pickerId);
+            const isVisible = picker.style.display === 'block';
+            document.querySelectorAll('.picker-popup').forEach(p => p.style.display = 'none');
+            picker.style.display = isVisible ? 'none' : 'block';
+        }
+
+        function insertEmoji(emoji) {
+            const input = document.getElementById('chat-input');
+            input.value += emoji;
+            input.focus();
+            document.getElementById('emoji-picker').style.display = 'none';
+        }
+
+        function sendGifMessage(gifUrl) {
+            document.getElementById('gif-picker').style.display = 'none';
+            const username = currentUser ? currentUser.username : 'Misafir';
+            const box = document.getElementById('chat-box');
+            box.innerHTML += `
+                <div class="chat-bubble">
+                    <b>${username}:</b> <br>
+                    <img src="${gifUrl}" class="chat-gif">
+                </div>
+            `;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        let fireworksParticles = [];
+        let canvas, ctx;
+
+        function initFireworksCanvas() {
+            canvas = document.getElementById('fireworks-canvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            requestAnimationFrame(updateFireworks);
+        }
+
+        function resizeCanvas() {
+            if(!canvas) return;
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        function triggerFireworksEffect() {
+            const box = document.getElementById('chat-box');
+            box.innerHTML += `<div class="chat-bubble system-announcement">🎆 <b>KUTLAMA:</b> Havai fişek gösterisi patlatıldı! Eğlence tavan yapıyor! 🎉</div>`;
+            box.scrollTop = box.scrollHeight;
+
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            const colors = ['#00d2ff', '#ff0055', '#ffd700', '#7928ca', '#2ecc71'];
+
+            for (let i = 0; i < 70; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 6 + 2;
+                fireworksParticles.push({
+                    x: centerX, y: centerY,
+                    vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
+                    alpha: 1, color: colors[Math.floor(Math.random() * colors.length)],
+                    size: Math.random() * 3 + 2
+                });
+            }
+        }
+
+        function updateFireworks() {
+            if (!ctx || !canvas) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            fireworksParticles.forEach((p, index) => {
+                p.x += p.vx; p.y += p.vy; p.vy += 0.05; p.alpha -= 0.015;
+                ctx.save();
+                ctx.globalAlpha = Math.max(p.alpha, 0);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+                if (p.alpha <= 0) fireworksParticles.splice(index, 1);
+            });
+            requestAnimationFrame(updateFireworks);
+        }
+
+        function switchAdminTab(evt, sectionId) {
+            document.querySelectorAll('.admin-section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.admin-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(sectionId).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+
+        function searchMember() {
+            const query = document.getElementById('member-search-input').value.trim().toLowerCase();
+            const resultBox = document.getElementById('member-search-result');
+            if (!query) { resultBox.innerHTML = "Lütfen üye adı giriniz."; return; }
+            if (systemUsers[query] || Object.keys(systemUsers).some(k => k.toLowerCase() === query)) {
+                const foundKey = Object.keys(systemUsers).find(k => k.toLowerCase() === query);
+                const user = systemUsers[foundKey];
+                resultBox.innerHTML = `<b>Bulunan Üye:</b> ${foundKey} <br><b>E-posta:</b> ${user.email} <br><b>Rolü:</b> ${user.role} <br><b>Kayıt:</b> ${user.regDate}`;
+            } else {
+                resultBox.innerHTML = `<span style="color:var(--live-red);">Üye bulunamadı.</span>`;
+            }
+        }
+
+        function handleMp3Upload(event) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+            Array.from(files).forEach((file) => {
+                if (autoDjPlaylist.length < 20) {
+                    autoDjPlaylist.push({ id: autoDjPlaylist.length + 1, title: file.name, src: URL.createObjectURL(file), isCustom: true });
+                }
+            });
+            initAutoDjTable();
+            alert('Parça Oto-DJ listesine eklendi!');
+        }
+
+        function removeTrack(index) {
+            autoDjPlaylist.splice(index, 1);
+            initAutoDjTable();
+        }
+
+        function initAutoDjTable() {
+            const tbody = document.getElementById('autodj-playlist-body');
+            const tbodyDj = document.getElementById('autodj-playlist-body-dj');
+            document.getElementById('mp3-count').innerText = autoDjPlaylist.length;
+            if(document.getElementById('mp3-count-dj')) document.getElementById('mp3-count-dj').innerText = autoDjPlaylist.length;
+
+            let htmlContent = '';
+            autoDjPlaylist.forEach((track, index) => {
+                const isCurrent = index === currentAutoDjTrackIndex;
+                htmlContent += `
+                    <tr style="${isCurrent ? 'color: var(--accent-blue); font-weight: bold;' : ''}">
+                        <td>${index + 1}</td>
+                        <td>${track.title}</td>
+                        <td>${track.isCustom ? 'Özel Yükleme' : 'Yedek Akış'}</td>
+                        <td>
+                            <button class="fx-btn" onclick="playSpecificTrack(${index})">▶️ Çal</button>
+                            <button class="fx-btn" style="background:var(--live-red);" onclick="removeTrack(${index})">Sil</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            if(tbody) tbody.innerHTML = htmlContent;
+            if(tbodyDj) tbodyDj.innerHTML = htmlContent;
+        }
+
+        function playSpecificTrack(index) {
+            currentAutoDjTrackIndex = index;
+            playAutoDjTrack(currentAutoDjTrackIndex);
+        }
+
+        function setupAudioEvents() {
+            audioElement.onerror = function() {
+                currentAutoDjTrackIndex = (currentAutoDjTrackIndex + 1) % autoDjPlaylist.length;
+                playAutoDjTrack(currentAutoDjTrackIndex);
+            };
+            audioElement.onended = function() {
+                currentAutoDjTrackIndex = (currentAutoDjTrackIndex + 1) % autoDjPlaylist.length;
+                playAutoDjTrack(currentAutoDjTrackIndex);
+            };
+        }
+
+        function playAutoDjTrack(index) {
+            if (autoDjPlaylist.length === 0) return;
+            const track = autoDjPlaylist[index];
+            audioElement.src = track.src;
+            document.getElementById('current-song').innerHTML = `<i class="fa-solid fa-compact-disc fa-spin"></i> Çalan: ${track.title}`;
+            initAutoDjTable();
+            if (isPlaying) audioElement.play().catch(e => console.log(e));
+        }
+
+        function sendBroadcastMessage() {
+            const text = document.getElementById('broadcast-text-input').value.trim();
+            if (!text) return;
+            const box = document.getElementById('chat-box');
+            box.innerHTML += `<div class="chat-bubble system-announcement"><i class="fa-solid fa-bullhorn"></i> <b>[DUYURU]:</b> ${text}</div>`;
+            box.scrollTop = box.scrollHeight;
+            document.getElementById('broadcast-text-input').value = '';
+            alert('Duyuru gönderildi!');
+        }
+
+        function saveGeneralSettings() {
+            const title = document.getElementById('set-site-title').value.trim();
+            const marquee = document.getElementById('set-marquee-text').value.trim();
+            if (title) document.querySelectorAll('.site-title-text').forEach(el => el.innerText = title);
+            if (marquee) document.getElementById('site-announcement').innerText = marquee;
+            alert('Ayarlar kaydedildi!');
+        }
+
+        function startPlatformAndAudio() {
+            document.getElementById('splash-overlay').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('splash-overlay').style.display = 'none';
+                document.getElementById('app-container').style.opacity = '1';
+                audioElement.src = autoDjPlaylist[0].src;
+                playAudio();
+            }, 500);
+        }
+
+        function playAudio() {
+            audioElement.play().then(() => {
+                isPlaying = true;
+                document.getElementById('play-btn').innerHTML = '<i class="fa-solid fa-pause"></i>';
+            }).catch(e => {
+                isPlaying = false;
+                document.getElementById('play-btn').innerHTML = '<i class="fa-solid fa-play"></i>';
+            });
+        }
+
+        function toggleAudio() {
+            if (isPlaying) { audioElement.pause(); isPlaying = false; document.getElementById('play-btn').innerHTML = '<i class="fa-solid fa-play"></i>'; }
+            else { playAudio(); }
+        }
+
+        function setVolume(val) { audioElement.volume = val; }
+        function toggleMute() { audioElement.volume = audioElement.volume > 0 ? 0 : 0.8; document.getElementById('volume-slider').value = audioElement.volume; }
+
+        function startPushToTalk() {
+            const btn = document.getElementById('push-talk-btn');
+            btn.classList.add('push-talk-active');
+            btn.innerHTML = '<i class="fa-solid fa-microphone-lines"></i> 🎙️ CANLI ANONS AKTİF';
+            audioElement.volume = 0.1;
+            const box = document.getElementById('chat-box');
+            box.innerHTML += `<div class="chat-bubble dj-bubble" id="live-announcement-bubble">🔴 <b>[CANLI ANONS]:</b> DJ salona sesleniyor...</div>`;
+            box.scrollTop = box.scrollHeight;
+        }
+
+        function stopPushToTalk() {
+            const btn = document.getElementById('push-talk-btn');
+            btn.classList.remove('push-talk-active');
+            btn.innerHTML = '<i class="fa-solid fa-microphone"></i> 🎙️ BAS KONUŞ';
+            audioElement.volume = document.getElementById('volume-slider').value;
+            const ann = document.getElementById('live-announcement-bubble');
+            if(ann) ann.remove();
+        }
+
+        function playAudioEffect(type) {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.type = type === 'clap' ? 'square' : (type === 'cheer' ? 'sine' : 'triangle');
+            osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+            gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+            gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+            osc.start(); osc.stop(audioCtx.currentTime + 0.3);
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+            const username = currentUser ? currentUser.username : 'Misafir';
+            const box = document.getElementById('chat-box');
+            box.innerHTML += `<div class="chat-bubble"><b>${username}:</b> ${msg}</div>`;
+            input.value = '';
+            box.scrollTop = box.scrollHeight;
+            document.querySelectorAll('.picker-popup').forEach(p => p.style.display = 'none');
+        }
+
+        function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function login() {
+            const u = document.getElementById('login-user').value.trim();
+            const p = document.getElementById('login-pass').value.trim();
+
+            if (systemUsers[u] && systemUsers[u].pass === p) {
+                currentUser = systemUsers[u];
+                currentUser.username = u;
+                document.getElementById('user-controls').innerHTML = `<span style="color:var(--accent-blue); font-size:0.85rem; font-weight:600;">🎧 ${currentUser.username} (${currentUser.role})</span>`;
+                
+                if (currentUser.isWebmaster) document.getElementById('master-panel-btn').style.display = 'inline-block';
+                if (currentUser.isDj) {
+                    document.getElementById('dj-panel-btn').style.display = 'inline-block';
+                    document.getElementById('dj-fx-bar').style.display = 'flex';
+                }
+                closeModal('auth-modal');
+                alert(`Giriş Başarılı! Hoş geldiniz, ${currentUser.username}.`);
+            } else {
+                alert('Hatalı Giriş Bilgileri!');
+            }
+        }
+
+        function clearChat() { document.getElementById('chat-box').innerHTML = ''; }
+    </script>
+</body>
+</html>
